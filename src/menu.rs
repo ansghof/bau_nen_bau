@@ -334,6 +334,7 @@ pub fn open_pause_menu(mut commands: Commands, mut time: ResMut<Time<Virtual>>, 
         spawn_button(&mut commands, panel, "Spielstand laden").observe(on_primary(load_game));
     }
     spawn_button(&mut commands, panel, "Ton an/aus").observe(on_primary(toggle_sound));
+    spawn_button(&mut commands, panel, "Musik an/aus").observe(on_primary(toggle_music));
     spawn_button(&mut commands, panel, "Neu beginnen").observe(on_primary(restart));
     if !cfg!(target_arch = "wasm32") {
         spawn_button(&mut commands, panel, "Beenden").observe(on_primary(quit));
@@ -343,6 +344,11 @@ pub fn open_pause_menu(mut commands: Commands, mut time: ResMut<Time<Virtual>>, 
 fn toggle_sound(mut sounds: ResMut<Sounds>, mut messages: ResMut<Messages>) {
     sounds.muted = !sounds.muted;
     messages.push(if sounds.muted { "Ton aus." } else { "Ton an." });
+}
+
+fn toggle_music(mut sounds: ResMut<Sounds>, mut messages: ResMut<Messages>) {
+    sounds.music = !sounds.music;
+    messages.push(if sounds.music { "Musik an." } else { "Musik aus." });
 }
 
 fn save_and_resume(world: &mut World) {

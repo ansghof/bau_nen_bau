@@ -8,6 +8,8 @@ use std::f32::consts::TAU;
 use std::fs;
 use std::path::Path;
 
+mod music;
+
 const RATE: u32 = 44_100;
 
 /// Ein einfacher, fester Zufallsgenerator, damit jeder Lauf dieselben Dateien ergibt.
@@ -220,7 +222,7 @@ fn normalize(mut sound: Vec<f32>) -> Vec<f32> {
     sound
 }
 
-fn write_wav(path: &Path, sound: &[f32]) {
+fn write_wav(path: &Path, sound: &[f32], rate: u32) {
     let data: Vec<u8> = sound
         .iter()
         .flat_map(|s| ((s.clamp(-1.0, 1.0) * i16::MAX as f32) as i16).to_le_bytes())
@@ -232,8 +234,8 @@ fn write_wav(path: &Path, sound: &[f32]) {
     wav.extend_from_slice(&16u32.to_le_bytes());
     wav.extend_from_slice(&1u16.to_le_bytes()); // PCM
     wav.extend_from_slice(&1u16.to_le_bytes()); // Mono
-    wav.extend_from_slice(&RATE.to_le_bytes());
-    wav.extend_from_slice(&(RATE * 2).to_le_bytes());
+    wav.extend_from_slice(&rate.to_le_bytes());
+    wav.extend_from_slice(&(rate * 2).to_le_bytes());
     wav.extend_from_slice(&2u16.to_le_bytes());
     wav.extend_from_slice(&16u16.to_le_bytes());
     wav.extend_from_slice(b"data");
@@ -272,7 +274,11 @@ fn main() {
     ];
     for (name, sound) in sounds {
         let path = folder.join(format!("{name}.wav"));
-        write_wav(&path, &normalize(sound));
+        write_wav(&path, &normalize(sound), RATE);
         println!("{}", path.display());
     }
+
+    let path = folder.join("musik.wav");
+    write_wav(&path, &music::music(), music::RATE);
+    println!("{}", path.display());
 }

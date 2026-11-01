@@ -15,9 +15,9 @@ impl Plugin for AudioPlugin {
     fn build(&self, app: &mut App) {
         // Automatische Testläufe bleiben stumm, sie laufen ja im Hintergrund.
         let muted = cfg!(debug_assertions) && std::env::var_os("BUNNY_TEST").is_some();
-        app.insert_resource(Sounds { queue: Vec::new(), muted })
-            .add_systems(Startup, load_sounds)
-            .add_systems(PostUpdate, (notice_stomping, play_sounds).chain());
+        app.insert_resource(Sounds { queue: Vec::new(), muted, music: true })
+            .add_systems(Startup, (load_sounds, start_music))
+            .add_systems(PostUpdate, ((notice_stomping, play_sounds).chain(), quiet_music));
     }
 }
 
@@ -97,6 +97,8 @@ impl Sound {
 pub struct Sounds {
     queue: Vec<Sound>,
     pub muted: bool,
+    /// Die Hintergrundmusik lässt sich für sich abschalten; ohne Ton schweigt sie ohnehin.
+    pub music: bool,
 }
 
 impl Sounds {
@@ -114,6 +116,33 @@ fn load_sounds(mut commands: Commands, asset_server: Res<AssetServer>) {
         .map(|sound| (sound, asset_server.load(format!("sounds/{}.wav", sound.file()))))
         .collect();
     commands.insert_resource(SoundFiles(files));
+}
+
+/// Die Hintergrundmusik, ein Stück aus `tools/sound_gen`, das sich nahtlos wiederholt.
+#[derive(Component)]
+struct Music;
+
+/// Leise genug, dass Alarm und Fuchs deutlich darüber liegen.
+const MUSIC_VOLUME: f32 = 0.35;
+
+fn start_music(mut commands: Commands, asset_server: Res<AssetServer>, sounds: Res<Sounds>) {
+    let mut settings = PlaybackSettings::LOOP.with_volume(Volume::Linear(MUSIC_VOLUME));
+    if sounds.muted {
+        settings = settings.muted();
+    }
+    commands.spawn((Music, AudioPlayer::new(asset_server.load("sounds/musik.wav")), settings));
+}
+
+/// Schaltet man Ton oder Musik ab, verstummt die Musik und spielt später an derselben Stelle weiter.
+fn quiet_music(sounds: Res<Sounds>, mut music: Query<&mut AudioSink, With<Music>>) {
+    let silent = sounds.muted || !sounds.music;
+    for mut sink in &mut music {
+        if silent && !sink.is_muted() {
+            sink.mute();
+        } else if !silent && sink.is_muted() {
+            sink.unmute();
+        }
+    }
 }
 
 /// Stampft eine Wache, hört man es.
