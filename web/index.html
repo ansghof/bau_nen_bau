@@ -21,6 +21,29 @@
     <div>Die Kaninchen graben sich zu dir durch …</div>
     <small>Das erste Laden dauert einen Moment.</small>
   </div>
+  <script>
+    // Browser lassen Töne erst nach einem Klick oder Tastendruck zu. Bevy legt seinen AudioContext
+    // schon beim Start an, der dann stumm bleibt; also merken wir uns jeden und wecken ihn bei der
+    // ersten Eingabe auf.
+    (() => {
+      const contexts = [];
+      const Original = window.AudioContext || window.webkitAudioContext;
+      if (!Original) return;
+      const Tracked = new Proxy(Original, {
+        construct(target, args) {
+          const context = new target(...args);
+          contexts.push(context);
+          return context;
+        },
+      });
+      window.AudioContext = Tracked;
+      window.webkitAudioContext = Tracked;
+      const wake = () => contexts.forEach((context) => context.state !== "running" && context.resume());
+      for (const event of ["pointerdown", "keydown", "touchstart"]) {
+        document.addEventListener(event, wake, { capture: true });
+      }
+    })();
+  </script>
   <script type="module">
     import init from "./bunny_skylines.js";
     const laden = document.getElementById("laden");
