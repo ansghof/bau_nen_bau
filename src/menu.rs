@@ -52,12 +52,19 @@ struct MenuButton;
 
 fn font(size: f32) -> TextFont {
     TextFont {
-        font: FontSource::families("'Segoe UI', 'Noto Sans', sans-serif"),
+        font: FontSource::families("'Segoe UI', 'Noto Sans', 'DejaVu Sans', sans-serif"),
         ..TextFont::from_font_size(size)
     }
 }
 
 /// Liegt das Titelbild schon im Spielordner? Sonst gibt es einen schlichten Ersatz.
+/// Die Webfassung wird immer mit allen Bildern gebaut.
+#[cfg(target_arch = "wasm32")]
+fn title_image_exists() -> bool {
+    true
+}
+
+#[cfg(not(target_arch = "wasm32"))]
 fn title_image_exists() -> bool {
     let mut roots = vec![std::path::PathBuf::from("assets")];
     if let Some(dir) = std::env::var_os("CARGO_MANIFEST_DIR") {
@@ -140,7 +147,10 @@ fn spawn_title(mut commands: Commands, asset_server: Res<AssetServer>, mut time:
     }
     menu_button(&mut commands, menu, "Kampagne").observe(on_primary(new_game));
     menu_button(&mut commands, menu, "Freies Spiel").observe(on_primary(free_game));
-    menu_button(&mut commands, menu, "Beenden").observe(on_primary(quit));
+    // Im Browser schließt man den Tab; ein Beenden ließe nur ein stehendes Bild zurück.
+    if !cfg!(target_arch = "wasm32") {
+        menu_button(&mut commands, menu, "Beenden").observe(on_primary(quit));
+    }
 }
 
 /// So breit sind die Knöpfe der Kapitelwahl: Jeder Kapitelname passt in eine Zeile.
@@ -325,7 +335,9 @@ pub fn open_pause_menu(mut commands: Commands, mut time: ResMut<Time<Virtual>>, 
     }
     spawn_button(&mut commands, panel, "Ton an/aus").observe(on_primary(toggle_sound));
     spawn_button(&mut commands, panel, "Neu beginnen").observe(on_primary(restart));
-    spawn_button(&mut commands, panel, "Beenden").observe(on_primary(quit));
+    if !cfg!(target_arch = "wasm32") {
+        spawn_button(&mut commands, panel, "Beenden").observe(on_primary(quit));
+    }
 }
 
 fn toggle_sound(mut sounds: ResMut<Sounds>, mut messages: ResMut<Messages>) {

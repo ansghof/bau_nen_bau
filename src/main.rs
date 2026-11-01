@@ -50,8 +50,15 @@ fn main() {
             resolution: (1280, 720).into(),
             focused: !test_run,
             visible: !hidden,
+            // Im Browser füllt das Spiel die Leinwand der Seite.
+            canvas: Some("#spiel".into()),
+            fit_canvas_to_parent: true,
             ..default()
         }),
+        ..default()
+    }).set(AssetPlugin {
+        // Es gibt keine .meta-Dateien; im Browser spart das eine Anfrage pro Bild.
+        meta_check: bevy::asset::AssetMetaCheck::Never,
         ..default()
     }))
         .insert_resource(ClearColor(Color::srgb(0.98, 0.95, 0.86)))

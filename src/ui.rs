@@ -24,9 +24,19 @@ pub struct UiPlugin;
 
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_ui)
+        app.add_systems(Startup, (load_font, spawn_ui))
             .add_systems(Update, (update_status, update_messages, update_selection_cost, hide_help));
     }
+}
+
+/// Die mitgelieferte Schrift. Im Browser gibt es keine Systemschriften, und die eingebaute
+/// Schrift kennt keine Umlaute; ist sie geladen, finden alle Texte sie über ihren Namen.
+#[derive(Resource)]
+#[allow(dead_code)]
+struct BundledFont(Handle<Font>);
+
+fn load_font(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.insert_resource(BundledFont(asset_server.load("schrift/DejaVuSans.ttf")));
 }
 
 #[derive(Component)]
@@ -58,7 +68,7 @@ fn panel(left: Option<f32>, right: Option<f32>, top: Option<f32>, bottom: Option
         BackgroundColor(Color::srgba(0.22, 0.15, 0.10, 0.78)),
         TextColor(Color::srgb(0.98, 0.95, 0.88)),
         TextFont {
-            font: FontSource::families("'Segoe UI', 'Noto Sans', sans-serif"),
+            font: FontSource::families("'Segoe UI', 'Noto Sans', 'DejaVu Sans', sans-serif"),
             ..TextFont::from_font_size(15.0)
         },
     )

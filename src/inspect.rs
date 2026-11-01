@@ -62,7 +62,7 @@ fn spawn_panel(mut commands: Commands) {
             Text::default(),
             TextColor(Color::srgb(0.98, 0.95, 0.88)),
             TextFont {
-                font: FontSource::families("'Segoe UI', 'Noto Sans', sans-serif"),
+                font: FontSource::families("'Segoe UI', 'Noto Sans', 'DejaVu Sans', sans-serif"),
                 ..TextFont::from_font_size(15.0)
             },
         ));

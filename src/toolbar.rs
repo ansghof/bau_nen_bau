@@ -268,7 +268,7 @@ fn text_style(size: f32) -> impl Bundle {
     (
         TextColor(TEXT),
         TextFont {
-            font: FontSource::families("'Segoe UI', 'Noto Sans', sans-serif"),
+            font: FontSource::families("'Segoe UI', 'Noto Sans', 'DejaVu Sans', sans-serif"),
             ..TextFont::from_font_size(size)
         },
     )

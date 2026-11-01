@@ -1,0 +1,69 @@
+# Baut die Webfassung (WASM) und stellt sie auf GitHub Pages.
+name: Webfassung
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Nur ein Lauf zur Zeit; ein neuer Push löst den alten ab.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - uses: Swatinem/rust-cache@v2
+
+      # wasm-bindgen muss genau die Version aus Cargo.lock haben.
+      - name: wasm-bindgen-Version lesen
+        id: bindgen
+        run: |
+          version=$(grep -A1 '^name = "wasm-bindgen"$' Cargo.lock | sed -n 's/^version = "\(.*\)"/\1/p')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-bindgen@${{ steps.bindgen.outputs.version }},wasm-opt
+
+      - name: Bauen
+        run: cargo build --profile web --target wasm32-unknown-unknown
+
+      - name: Seite zusammenstellen
+        run: |
+          mkdir -p dist
+          wasm-bindgen --target web --no-typescript --out-dir dist --out-name bunny_skylines \
+            target/wasm32-unknown-unknown/web/bunny_skylines.wasm
+          # Die Erweiterungen, die Rust für wasm32 von sich aus nutzt.
+          wasm-opt -Os --enable-bulk-memory --enable-nontrapping-float-to-int --enable-sign-ext \
+            --enable-mutable-globals --enable-multivalue --enable-reference-types \
+            dist/bunny_skylines_bg.wasm -o dist/bunny_skylines_bg.wasm
+          cp web/index.html dist/
+          cp -r assets dist/
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

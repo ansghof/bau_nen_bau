@@ -504,7 +504,7 @@ fn text(size: f32, color: Color) -> impl Bundle {
     (
         TextColor(color),
         TextFont {
-            font: FontSource::families("'Segoe UI', 'Noto Sans', sans-serif"),
+            font: FontSource::families("'Segoe UI', 'Noto Sans', 'DejaVu Sans', sans-serif"),
             ..TextFont::from_font_size(size)
         },
         TextLayout::justify(Justify::Center),

@@ -120,7 +120,7 @@ fn spawn_legend(mut commands: Commands) {
         BorderColor::all(Color::srgb(0.95, 0.80, 0.45)),
         TextColor(Color::srgb(0.98, 0.95, 0.88)),
         TextFont {
-            font: FontSource::families("'Segoe UI', 'Noto Sans', sans-serif"),
+            font: FontSource::families("'Segoe UI', 'Noto Sans', 'DejaVu Sans', sans-serif"),
             ..TextFont::from_font_size(15.0)
         },
     ));

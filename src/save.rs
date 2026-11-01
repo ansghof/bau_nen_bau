@@ -1,7 +1,5 @@
 //! Spielstände: F5 speichert, F9 lädt; zu jeder neuen Jahreszeit wird automatisch gespeichert.
-//! Es gibt einen Speicherplatz, eine RON-Datei im Benutzerordner.
-
-use std::path::PathBuf;
+//! Es gibt einen Speicherplatz, eine RON-Datei im Benutzerordner; im Browser liegt sie im localStorage.
 
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -68,8 +66,13 @@ fn first_chapter() -> u32 {
     1
 }
 
+const SAVE_FILE: &str = "spielstand.ron";
+const CAMPAIGN_FILE: &str = "kampagne.ron";
+
 /// Testläufe schreiben in den Build-Ordner, damit sie keine echten Spielstände überschreiben.
-fn data_path(file: &str) -> PathBuf {
+#[cfg(not(target_arch = "wasm32"))]
+fn data_path(file: &str) -> std::path::PathBuf {
+    use std::path::PathBuf;
     if cfg!(debug_assertions) && std::env::var_os("BUNNY_TEST").is_some() {
         return PathBuf::from("target").join(format!("test-{file}"));
     }
@@ -79,13 +82,44 @@ fn data_path(file: &str) -> PathBuf {
     }
 }
 
-fn save_path() -> PathBuf {
-    data_path("spielstand.ron")
+#[cfg(not(target_arch = "wasm32"))]
+fn read_data(file: &str) -> Result<String, String> {
+    std::fs::read_to_string(data_path(file)).map_err(|e| e.to_string())
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn write_data(file: &str, text: &str) -> Result<(), String> {
+    let path = data_path(file);
+    if let Some(dir) = path.parent() {
+        std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+    }
+    std::fs::write(&path, text).map_err(|e| e.to_string())
+}
+
+/// Im Browser gibt es keine Dateien; der localStorage merkt sich die Spielstände je Seite.
+#[cfg(target_arch = "wasm32")]
+fn storage() -> Result<web_sys::Storage, String> {
+    web_sys::window()
+        .and_then(|window| window.local_storage().ok().flatten())
+        .ok_or_else(|| "kein localStorage".to_string())
+}
+
+#[cfg(target_arch = "wasm32")]
+fn read_data(file: &str) -> Result<String, String> {
+    storage()?
+        .get_item(&format!("bunny_skylines/{file}"))
+        .map_err(|e| format!("{e:?}"))?
+        .ok_or_else(|| format!("{file} fehlt"))
+}
+
+#[cfg(target_arch = "wasm32")]
+fn write_data(file: &str, text: &str) -> Result<(), String> {
+    storage()?.set_item(&format!("bunny_skylines/{file}"), text).map_err(|e| format!("{e:?}"))
 }
 
 /// Bis zu welchem Kapitel die Kampagne frei ist; das erste ist es immer.
 pub fn chapters_unlocked() -> u32 {
-    std::fs::read_to_string(data_path("kampagne.ron"))
+    read_data(CAMPAIGN_FILE)
         .ok()
         .and_then(|text| ron::from_str::<u32>(&text).ok())
         .unwrap_or(1)
@@ -97,18 +131,13 @@ pub fn unlock_chapter(number: u32) {
     if number <= chapters_unlocked() {
         return;
     }
-    let path = data_path("kampagne.ron");
-    let written = path
-        .parent()
-        .map_or(Ok(()), std::fs::create_dir_all)
-        .and_then(|()| std::fs::write(&path, number.to_string()));
-    if let Err(error) = written {
+    if let Err(error) = write_data(CAMPAIGN_FILE, &number.to_string()) {
         warn!("Kampagnenfortschritt nicht gespeichert: {error}");
     }
 }
 
 pub fn save_exists() -> bool {
-    save_path().exists()
+    read_data(SAVE_FILE).is_ok()
 }
 
 fn save_keys(keys: Res<ButtonInput<KeyCode>>, mut commands: Commands) {
@@ -175,15 +204,9 @@ pub fn save_game(world: &mut World) {
         rabbits,
         cat: world.resource::<CatBond>(),
     };
-    let path = save_path();
     let written = ron::to_string(&save)
         .map_err(|e| e.to_string())
-        .and_then(|text| {
-            if let Some(dir) = path.parent() {
-                std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
-            }
-            std::fs::write(&path, text).map_err(|e| e.to_string())
-        });
+        .and_then(|text| write_data(SAVE_FILE, &text));
     let message = match written {
         Ok(()) => "Spielstand gespeichert.".to_string(),
         Err(error) => {
@@ -195,8 +218,7 @@ pub fn save_game(world: &mut World) {
 }
 
 pub fn load_game(world: &mut World) {
-    let loaded = std::fs::read_to_string(save_path())
-        .map_err(|e| e.to_string())
+    let loaded = read_data(SAVE_FILE)
         .and_then(|text| ron::from_str::<SaveGame>(&text).map_err(|e| e.to_string()));
     let save = match loaded {
         Ok(save) if save.version == VERSION => save,

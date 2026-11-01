@@ -109,10 +109,17 @@ impl Terrain {
 }
 
 /// Jede freie Karte anders: aus der Uhrzeit.
+#[cfg(not(target_arch = "wasm32"))]
 fn random_seed() -> u64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map_or(12345, |d| d.as_nanos() as u64)
+}
+
+/// Im Browser gibt es keine Systemuhr in Nanosekunden; Uhrzeit und Zufall des Browsers tun es auch.
+#[cfg(target_arch = "wasm32")]
+fn random_seed() -> u64 {
+    js_sys::Date::now() as u64 ^ (js_sys::Math::random() * u32::MAX as f64) as u64
 }
 
 /// Welche Feinde ein Kapitel wie früh schickt.
