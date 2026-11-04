@@ -568,6 +568,7 @@ fn play_fanfare(
     time: Res<Time<Real>>,
     asset_server: Res<AssetServer>,
     windows: Query<&Window>,
+    ui_scale: Res<UiScale>,
     standing: Res<Standing>,
     mut fanfare: ResMut<Fanfare>,
     mut unveil: ResMut<Unveil>,
@@ -604,7 +605,8 @@ fn play_fanfare(
         info.0 = format!("{}\n{}\n{place}{next}", monument.condition(tier), monument.effect());
         node.display = Display::Flex;
         sounds.play(Sound::Victory);
-        let width = windows.iter().next().map_or(1280.0, |w| w.width());
+        // Konfetti fliegt in Oberflächen-Pixeln, die bei kleinen Fenstern geschrumpft sind.
+        let width = windows.iter().next().map_or(1280.0, |w| w.width()) / ui_scale.0;
         for _ in 0..CONFETTI_PIECES {
             spawn_confetti(&mut commands, &mut rng, width);
         }
@@ -657,10 +659,11 @@ fn fly_confetti(
     mut commands: Commands,
     time: Res<Time<Real>>,
     windows: Query<&Window>,
+    ui_scale: Res<UiScale>,
     mut pieces: Query<(Entity, &mut ConfettiPiece, &mut Node)>,
 ) {
     let dt = time.delta_secs();
-    let bottom = windows.iter().next().map_or(800.0, |w| w.height()) + 20.0;
+    let bottom = windows.iter().next().map_or(800.0, |w| w.height()) / ui_scale.0 + 20.0;
     for (entity, mut piece, mut node) in &mut pieces {
         piece.phase += piece.spin * dt;
         let sway = piece.phase.sin() * 50.0;

@@ -1,6 +1,7 @@
 //! Bildschirmanzeige: Status oben links, Meldungen oben rechts, Tastenhilfe unten.
 
 use bevy::prelude::*;
+use bevy::window::PrimaryWindow;
 
 use crate::behavior::Priorities;
 use crate::colony::{Colony, Messages};
@@ -20,12 +21,19 @@ Mittlere Maustaste oder WASD: verschieben\n\
 Rechte Maustaste: drehen und neigen · Mausrad: Zoom\n\
 F5: speichern · F9: laden · F10: Menü";
 
+/// Dieselbe Hilfe für Finger, sobald jemand den Bildschirm berührt hat.
+const TOUCH_HELP: &str = "Zeigen-Werkzeug: Kaninchen antippen, ohne zu bauen
+Mit einem Finger ziehen: Bereich markieren
+Zwei Finger: schieben verschiebt, spreizen zoomt, drehen dreht
+Speichern und Laden im Menü rechts unten";
+
 pub struct UiPlugin;
 
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, (load_font, spawn_ui))
-            .add_systems(Update, (update_status, update_messages, update_selection_cost, hide_help));
+            .add_systems(PreUpdate, fit_ui_to_window)
+            .add_systems(Update, (update_status, update_messages, update_selection_cost, hide_help, help_for_fingers));
     }
 }
 
@@ -37,6 +45,17 @@ struct BundledFont(Handle<Font>);
 
 fn load_font(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(BundledFont(asset_server.load("schrift/DejaVuSans.ttf")));
+}
+
+/// Für diese Fenstergröße ist die Oberfläche gebaut; in kleineren Fenstern (Tablet, Handy)
+/// schrumpft sie als Ganzes, damit nichts übereinander liegt oder aus dem Bild ragt.
+const DESIGN_SIZE: Vec2 = Vec2::new(1280.0, 720.0);
+
+fn fit_ui_to_window(window: Single<&Window, (With<PrimaryWindow>, Changed<Window>)>, mut scale: ResMut<UiScale>) {
+    let fit = (window.width() / DESIGN_SIZE.x).min(window.height() / DESIGN_SIZE.y).min(1.0);
+    if fit > 0.0 && (scale.0 - fit).abs() > 0.001 {
+        scale.0 = fit;
+    }
 }
 
 #[derive(Component)]
@@ -173,6 +192,13 @@ fn update_messages(messages: Res<Messages>, mut text: Single<&mut Text, With<Mes
 }
 
 /// Forschungsbaum und Errungenschaften liegen über der Tastenhilfe: Solange eins offen ist, verschwindet sie.
+fn help_for_fingers(touches: Res<Touches>, mut help: Single<&mut Text, With<HelpText>>, mut switched: Local<bool>) {
+    if !*switched && touches.any_just_pressed() {
+        *switched = true;
+        help.0 = TOUCH_HELP.to_string();
+    }
+}
+
 fn hide_help(research: Res<ResearchOpen>, feats: Res<FeatsOpen>, mut help: Single<&mut Node, With<HelpText>>) {
     let display = if research.0 || feats.0 { Display::None } else { Display::Flex };
     if help.display != display {

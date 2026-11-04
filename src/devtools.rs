@@ -53,6 +53,7 @@
 //! - `neustart`: sobald die Familie ausgestorben ist, „Neu beginnen“ drücken
 //! - `forschung`: alles freischalten; `weisheit=N`: so viel Weisheit zum Start; `baum`: Forschungsbaum offen
 //! - `nacht`: kurz vor Einbruch der Nacht starten
+//! - `breite=N`, `hoehe=N`: Fenstergröße in Pixeln, z. B. wie ein Tablet oder Handy quer
 //!
 //! Bei jedem Wechsel der Jahreszeit steht im Protokoll, wie viele Kaninchen leben und wie viel Futter da ist.
 //! - `tempo=N`: Spielgeschwindigkeit
@@ -101,7 +102,7 @@ impl Plugin for DevToolsPlugin {
         };
         let commands: Vec<String> = script.split(',').map(|s| s.trim().to_string()).collect();
         app.insert_resource(TestScript(commands))
-            .add_systems(Startup, prepare)
+            .add_systems(Startup, (prepare, window_size))
             .add_systems(Update, (age_founders, famine, auto_restart, log_seasons, log_crowding, quit_after))
             .add_systems(PreUpdate, fake_cursor.after(update_cursor))
             .add_systems(Update, fake_press.before(apply_drag))
@@ -127,6 +128,12 @@ impl TestScript {
         self.0
             .iter()
             .find_map(|c| c.strip_prefix(key)?.strip_prefix('=')?.parse().ok())
+    }
+}
+
+fn window_size(script: Res<TestScript>, mut window: Single<&mut Window, With<PrimaryWindow>>) {
+    if let (Some(width), Some(height)) = (script.value("breite"), script.value("hoehe")) {
+        window.resolution.set(width, height);
     }
 }
 

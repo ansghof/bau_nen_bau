@@ -32,6 +32,7 @@ mod scenario;
 mod speed;
 mod toolbar;
 mod tools;
+mod touch;
 mod ui;
 
 use bevy::prelude::*;
@@ -80,7 +81,7 @@ fn main() {
             carry::CarryPlugin,
             danger::DangerPlugin,
         ))
-        .add_plugins((flood::FloodPlugin, drought::DroughtPlugin, molehill::MolehillPlugin, cat::CatPlugin, monument::MonumentPlugin))
+        .add_plugins((flood::FloodPlugin, drought::DroughtPlugin, molehill::MolehillPlugin, cat::CatPlugin, monument::MonumentPlugin, touch::TouchPlugin))
         // Darstellung und Bedienung
         .add_plugins((
             furnishing::FurnishingPlugin,

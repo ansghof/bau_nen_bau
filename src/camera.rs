@@ -1,6 +1,6 @@
 //! Schräge Kamera, die um einen Punkt auf dem Boden kreist:
 //! WASD/Pfeiltasten oder mittlere Maustaste verschieben, rechte Maustaste dreht und neigt,
-//! Mausrad zoomt. Läuft in Echtzeit, also auch während der Pause.
+//! Mausrad zoomt; mit den Fingern siehe `touch`. Läuft in Echtzeit, also auch während der Pause.
 
 use bevy::camera::visibility::RenderLayers;
 use bevy::core_pipeline::tonemapping::{DebandDither, Tonemapping};
@@ -10,6 +10,7 @@ use bevy::window::PrimaryWindow;
 
 use crate::ground::pick;
 use crate::map::{Grid, Layer, MAP_HEIGHT, MAP_WIDTH, TILE_SIZE, ViewLayer};
+use crate::touch::{TouchCursor, pointer};
 
 const PAN_SPEED: f32 = 1.0;
 const ROTATE_SPEED: f32 = 0.006;
@@ -18,8 +19,8 @@ const EDGE_ZONE: f32 = 12.0;
 /// Am Rand wandert sie langsamer als mit den Tasten.
 const EDGE_SPEED: f32 = 0.35;
 const ZOOM_STEP: f32 = 0.1;
-const MIN_DISTANCE: f32 = 250.0;
-const MAX_DISTANCE: f32 = 3200.0;
+pub const MIN_DISTANCE: f32 = 250.0;
+pub const MAX_DISTANCE: f32 = 3200.0;
 const MIN_PITCH: f32 = 0.35;
 const MAX_PITCH: f32 = 1.45;
 
@@ -132,7 +133,7 @@ impl Orbit {
     }
 
     /// Vorwärts und rechts auf dem Boden, aus Sicht der Kamera.
-    fn ground_axes(&self) -> (Vec3, Vec3) {
+    pub fn ground_axes(&self) -> (Vec3, Vec3) {
         let forward = Vec3::new(-self.yaw.sin(), 0.0, -self.yaw.cos());
         let right = Vec3::new(self.yaw.cos(), 0.0, -self.yaw.sin());
         (forward, right)
@@ -175,11 +176,11 @@ pub fn update_cursor(
     camera: Single<(&Camera, &GlobalTransform), With<MainCamera>>,
     view: Res<ViewLayer>,
     grid: Res<Grid>,
+    touch: Res<TouchCursor>,
     mut cursor: ResMut<CursorWorld>,
 ) {
     let (camera, transform) = *camera;
-    cursor.0 = window
-        .cursor_position()
+    cursor.0 = pointer(&window, &touch)
         .and_then(|position| camera.viewport_to_world(transform, position).ok())
         .and_then(|ray| pick(&grid, view.0, ray));
 }

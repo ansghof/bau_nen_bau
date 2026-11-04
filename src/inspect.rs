@@ -7,6 +7,7 @@ use bevy::window::PrimaryWindow;
 
 use crate::behavior::{Activity, Fear, Goal};
 use crate::camera::MainCamera;
+use crate::touch::{TouchCursor, pointer};
 use crate::daynight::{DAY_LENGTH, DayClock, Season, YEAR_LENGTH};
 use crate::ground::{floor_y, gizmo_circle, to_world3};
 use crate::map::{Feature, Grid, TilePos, ViewLayer};
@@ -82,12 +83,13 @@ pub fn pick_rabbit(
     toolbar: Query<&Hovered, With<Toolbar>>,
     mut drag: ResMut<Drag>,
     mut selected: ResMut<Selected>,
+    touch: Res<TouchCursor>,
     mut pressed_at: Local<Option<Vec2>>,
 ) {
     if keys.just_pressed(KeyCode::Escape) {
         selected.0 = None;
     }
-    let cursor = window.cursor_position();
+    let cursor = pointer(&window, &touch);
     if buttons.just_pressed(MouseButton::Left) {
         *pressed_at = cursor;
     }
