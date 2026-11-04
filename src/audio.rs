@@ -15,7 +15,8 @@ impl Plugin for AudioPlugin {
     fn build(&self, app: &mut App) {
         // Automatische Testläufe bleiben stumm, sie laufen ja im Hintergrund.
         let muted = cfg!(debug_assertions) && std::env::var_os("BUNNY_TEST").is_some();
-        app.insert_resource(Sounds { queue: Vec::new(), muted, music: true })
+        // Beim Entwickeln (Debug-Build) startet die Musik ausgeschaltet; das Pausenmenü schaltet sie an.
+        app.insert_resource(Sounds { queue: Vec::new(), muted, music: !cfg!(debug_assertions) })
             .add_systems(Startup, (load_sounds, start_music))
             .add_systems(PostUpdate, ((notice_stomping, play_sounds).chain(), quiet_music));
     }
@@ -127,7 +128,7 @@ const MUSIC_VOLUME: f32 = 0.35;
 
 fn start_music(mut commands: Commands, asset_server: Res<AssetServer>, sounds: Res<Sounds>) {
     let mut settings = PlaybackSettings::LOOP.with_volume(Volume::Linear(MUSIC_VOLUME));
-    if sounds.muted {
+    if sounds.muted || !sounds.music {
         settings = settings.muted();
     }
     commands.spawn((Music, AudioPlayer::new(asset_server.load("sounds/musik.wav")), settings));
