@@ -6,6 +6,7 @@ use std::collections::HashMap;
 
 use bevy::audio::Volume;
 use bevy::prelude::*;
+use bevy::window::AppLifecycle;
 
 use crate::rabbit::Stomping;
 
@@ -18,7 +19,7 @@ impl Plugin for AudioPlugin {
         // Beim Entwickeln (Debug-Build) startet die Musik ausgeschaltet; das Pausenmenü schaltet sie an.
         app.insert_resource(Sounds { queue: Vec::new(), muted, music: !cfg!(debug_assertions) })
             .add_systems(Startup, (load_sounds, start_music))
-            .add_systems(PostUpdate, ((notice_stomping, play_sounds).chain(), quiet_music));
+            .add_systems(PostUpdate, ((notice_stomping, play_sounds).chain(), quiet_music, pause_when_away));
     }
 }
 
@@ -142,6 +143,17 @@ fn quiet_music(sounds: Res<Sounds>, mut music: Query<&mut AudioSink, With<Music>
             sink.mute();
         } else if !silent && sink.is_muted() {
             sink.unmute();
+        }
+    }
+}
+
+/// Wechselt man auf dem Handy in eine andere App, schweigt das Spiel, bis man zurückkommt.
+fn pause_when_away(mut lifecycle: MessageReader<AppLifecycle>, sinks: Query<&AudioSink>) {
+    for event in lifecycle.read() {
+        match event {
+            AppLifecycle::WillSuspend => sinks.iter().for_each(|sink| sink.pause()),
+            AppLifecycle::WillResume => sinks.iter().for_each(|sink| sink.play()),
+            _ => {}
         }
     }
 }

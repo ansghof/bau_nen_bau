@@ -4,7 +4,9 @@
 use bevy::app::AppExit;
 use bevy::picking::hover::Hovered;
 use bevy::picking::pointer::PointerButton;
+use bevy::input::keyboard::Key;
 use bevy::prelude::*;
+use bevy::window::AppLifecycle;
 
 use crate::audio::{Sound, Sounds};
 use crate::colony::Messages;
@@ -58,13 +60,13 @@ fn font(size: f32) -> TextFont {
 }
 
 /// Liegt das Titelbild schon im Spielordner? Sonst gibt es einen schlichten Ersatz.
-/// Die Webfassung wird immer mit allen Bildern gebaut.
-#[cfg(target_arch = "wasm32")]
+/// Die Web- und die Android-Fassung werden immer mit allen Bildern gebaut.
+#[cfg(any(target_arch = "wasm32", target_os = "android"))]
 fn title_image_exists() -> bool {
     true
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(not(any(target_arch = "wasm32", target_os = "android")))]
 fn title_image_exists() -> bool {
     let mut roots = vec![std::path::PathBuf::from("assets")];
     if let Some(dir) = std::env::var_os("CARGO_MANIFEST_DIR") {
@@ -147,8 +149,7 @@ fn spawn_title(mut commands: Commands, asset_server: Res<AssetServer>, mut time:
     }
     menu_button(&mut commands, menu, "Kampagne").observe(on_primary(new_game));
     menu_button(&mut commands, menu, "Freies Spiel").observe(on_primary(free_game));
-    // Im Browser schließt man den Tab; ein Beenden ließe nur ein stehendes Bild zurück.
-    if !cfg!(target_arch = "wasm32") {
+    if CAN_QUIT {
         menu_button(&mut commands, menu, "Beenden").observe(on_primary(quit));
     }
 }
@@ -305,18 +306,29 @@ fn continue_game(world: &mut World) {
     world.run_system_cached(load_game).ok();
 }
 
+/// Im Browser schließt man den Tab, auf dem Handy wischt man die App weg; ein Beenden-Knopf
+/// ließe dort nur ein stehendes Bild zurück.
+const CAN_QUIT: bool = !cfg!(any(target_arch = "wasm32", target_os = "android"));
+
 fn quit(mut exit: MessageWriter<AppExit>) {
     exit.write(AppExit::Success);
 }
 
-/// F10 öffnet im Spiel das Pausenmenü, solange kein anderes Fenster offen ist.
+/// F10 öffnet im Spiel das Pausenmenü, solange kein anderes Fenster offen ist; auf dem Handy
+/// tut das die Zurück-Taste, und wer die App verlässt, findet bei der Rückkehr das Spiel angehalten.
 fn pause_menu_key(
     keys: Res<ButtonInput<KeyCode>>,
+    named_keys: Res<ButtonInput<Key>>,
+    mut lifecycle: MessageReader<AppLifecycle>,
     mut requested: ResMut<OpenMenu>,
     screens: Query<(), With<EndScreen>>,
     mut commands: Commands,
 ) {
-    let wanted = keys.just_pressed(KeyCode::F10) || std::mem::take(&mut requested.0);
+    let left_app = lifecycle.read().any(|event| *event == AppLifecycle::WillSuspend);
+    let wanted = keys.just_pressed(KeyCode::F10)
+        || named_keys.just_pressed(Key::BrowserBack)
+        || left_app
+        || std::mem::take(&mut requested.0);
     if wanted && screens.is_empty() {
         commands.run_system_cached(open_pause_menu);
     }
@@ -336,7 +348,7 @@ pub fn open_pause_menu(mut commands: Commands, mut time: ResMut<Time<Virtual>>, 
     spawn_button(&mut commands, panel, "Ton an/aus").observe(on_primary(toggle_sound));
     spawn_button(&mut commands, panel, "Musik an/aus").observe(on_primary(toggle_music));
     spawn_button(&mut commands, panel, "Neu beginnen").observe(on_primary(restart));
-    if !cfg!(target_arch = "wasm32") {
+    if CAN_QUIT {
         spawn_button(&mut commands, panel, "Beenden").observe(on_primary(quit));
     }
 }

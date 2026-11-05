@@ -2,6 +2,7 @@
 //! Es gibt einen Speicherplatz, eine RON-Datei im Benutzerordner; im Browser liegt sie im localStorage.
 
 use bevy::prelude::*;
+use bevy::window::AppLifecycle;
 use serde::{Deserialize, Serialize};
 
 use crate::behavior::{Activity, Carrying, Priorities};
@@ -21,7 +22,7 @@ pub struct SavePlugin;
 
 impl Plugin for SavePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (save_keys, autosave));
+        app.add_systems(Update, (save_keys, autosave, save_when_leaving));
     }
 }
 
@@ -76,10 +77,27 @@ fn data_path(file: &str) -> std::path::PathBuf {
     if cfg!(debug_assertions) && std::env::var_os("BUNNY_TEST").is_some() {
         return PathBuf::from("target").join(format!("test-{file}"));
     }
-    match std::env::var_os("APPDATA") {
-        Some(dir) => PathBuf::from(dir).join("BunnySkylines").join(file),
-        None => PathBuf::from(file),
-    }
+    data_dir().map_or_else(|| PathBuf::from(file), |dir| dir.join(file))
+}
+
+/// Der Ordner, in den das Spiel schreiben darf, je nach Betriebssystem.
+#[cfg(target_os = "android")]
+fn data_dir() -> Option<std::path::PathBuf> {
+    bevy::android::ANDROID_APP.get().and_then(|app| app.internal_data_path())
+}
+
+#[cfg(not(any(target_os = "android", target_arch = "wasm32")))]
+fn data_dir() -> Option<std::path::PathBuf> {
+    use std::path::PathBuf;
+    let env = |name| std::env::var_os(name).map(PathBuf::from);
+    let base = if cfg!(windows) {
+        env("APPDATA")
+    } else if cfg!(target_os = "macos") {
+        env("HOME").map(|home| home.join("Library/Application Support"))
+    } else {
+        env("XDG_DATA_HOME").or_else(|| env("HOME").map(|home| home.join(".local/share")))
+    };
+    base.map(|dir| dir.join("BunnySkylines"))
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -146,6 +164,19 @@ fn save_keys(keys: Res<ButtonInput<KeyCode>>, mut commands: Commands) {
     }
     if keys.just_pressed(KeyCode::F9) {
         commands.run_system_cached(load_game);
+    }
+}
+
+/// Auf dem Handy wird eine App oft einfach weggewischt; vorher wird gespeichert.
+fn save_when_leaving(
+    mut lifecycle: MessageReader<AppLifecycle>,
+    scenario: Res<Scenario>,
+    rabbits: Query<(), With<Rabbit>>,
+    mut commands: Commands,
+) {
+    let leaving = lifecycle.read().any(|event| *event == AppLifecycle::WillSuspend);
+    if leaving && matches!(scenario.stage, Stage::Playing | Stage::Free) && !rabbits.is_empty() {
+        commands.run_system_cached(save_game);
     }
 }
 
