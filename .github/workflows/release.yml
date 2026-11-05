@@ -1,4 +1,4 @@
-# Baut das Spiel zum Herunterladen: Windows, Linux, macOS und die Android-APK.
+# Baut das Spiel zum Herunterladen: Windows, Linux, macOS und für Android die APK und das App-Bundle (.aab) für Google Play.
 # Nach jedem Push auf main liegen sie als Artefakte am Lauf (Actions → „Builds“ → Lauf → Artifacts);
 # bei einem Versions-Tag wie v0.2.0 kommen sie zusätzlich in ein GitHub-Release.
 name: Builds
@@ -110,15 +110,18 @@ jobs:
             echo "::warning::Kein ANDROID_KEYSTORE_BASE64-Secret: die APK ist nur mit einem Debug-Schlüssel signiert."
           fi
 
-      - name: APK packen
+      # Die APK zum direkten Installieren, das Bundle zum Hochladen bei Google Play.
+      # Beide signiert Gradle mit demselben Schlüssel; für Play ist er der Upload-Schlüssel.
+      - name: APK und App-Bundle packen
         env:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          bash .github/bau.sh gradle -p android assembleRelease
+          bash .github/bau.sh gradle -p android assembleRelease bundleRelease
           mkdir -p dist
           cp android/app/build/outputs/apk/release/app-release.apk dist/BauNenBau.apk
+          cp android/app/build/outputs/bundle/release/app-release.aab dist/BauNenBau.aab
 
       - uses: actions/upload-artifact@v5
         with:
@@ -142,10 +145,11 @@ jobs:
           for system in windows linux macos; do
             (cd "bau-nen-bau-$system" && zip -qr "../BauNenBau-$system.zip" BauNenBau)
           done
-          mv bau-nen-bau-android/BauNenBau.apk .
+          mv bau-nen-bau-android/BauNenBau.apk bau-nen-bau-android/BauNenBau.aab .
 
       - uses: softprops/action-gh-release@v2
         with:
           files: |
             fassungen/BauNenBau-*.zip
             fassungen/BauNenBau.apk
+            fassungen/BauNenBau.aab
