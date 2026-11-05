@@ -1,0 +1,107 @@
+//! Bunny Skylines – Bau ’nen Bau! Das ganze Spiel; die Einstiegspunkte für Desktop und Browser
+//! (`main.rs`) und für Android (`mobile/`) rufen nur [`run`] auf.
+
+mod audio;
+mod behavior;
+mod bird;
+mod camera;
+mod cat;
+mod carry;
+mod colony;
+mod danger;
+mod daynight;
+#[cfg(debug_assertions)]
+mod devtools;
+mod drought;
+mod effects;
+mod ending;
+mod flood;
+mod furnishing;
+mod ground;
+mod inspect;
+mod map;
+mod molehill;
+mod monument;
+mod marten;
+mod menu;
+mod overlay;
+mod pathfinding;
+mod predator;
+mod progress;
+mod rabbit;
+mod rig;
+mod save;
+mod scenario;
+mod speed;
+mod toolbar;
+mod tools;
+mod touch;
+mod ui;
+
+use bevy::prelude::*;
+
+/// Startet das Spiel und kehrt erst zurück, wenn es beendet ist.
+pub fn run() {
+    // Automatische Testläufe sollen niemandem den Fokus wegnehmen.
+    let test_script = std::env::var("BUNNY_TEST").ok().filter(|_| cfg!(debug_assertions));
+    let test_run = test_script.is_some();
+    // Lange Zeitraffer-Läufe brauchen nur das Protokoll, kein Fenster auf dem Bildschirm.
+    let hidden = test_script.is_some_and(|s| s.split(',').any(|c| c.trim() == "unsichtbar"));
+
+    let mut app = App::new();
+    app.add_plugins(DefaultPlugins.set(WindowPlugin {
+        primary_window: Some(Window {
+            title: "Bunny Skylines – Bau ’nen Bau!".into(),
+            resolution: (1280, 720).into(),
+            focused: !test_run,
+            visible: !hidden,
+            // Im Browser füllt das Spiel die Leinwand der Seite.
+            canvas: Some("#spiel".into()),
+            fit_canvas_to_parent: true,
+            ..default()
+        }),
+        ..default()
+    }).set(AssetPlugin {
+        // Es gibt keine .meta-Dateien; im Browser spart das eine Anfrage pro Bild.
+        meta_check: bevy::asset::AssetMetaCheck::Never,
+        ..default()
+    }))
+        .insert_resource(ClearColor(Color::srgb(0.98, 0.95, 0.86)))
+        // Welt und Spiellogik
+        .add_plugins((
+            camera::CameraPlugin,
+            speed::SpeedPlugin,
+            map::MapPlugin,
+            ground::GroundPlugin,
+            tools::ToolsPlugin,
+            colony::ColonyPlugin,
+            rig::RigPlugin,
+            rabbit::RabbitPlugin,
+            behavior::BehaviorPlugin,
+            daynight::DayNightPlugin,
+            predator::PredatorPlugin,
+            bird::BirdPlugin,
+            marten::MartenPlugin,
+            carry::CarryPlugin,
+            danger::DangerPlugin,
+        ))
+        .add_plugins((flood::FloodPlugin, drought::DroughtPlugin, molehill::MolehillPlugin, cat::CatPlugin, monument::MonumentPlugin, touch::TouchPlugin))
+        // Darstellung und Bedienung
+        .add_plugins((
+            furnishing::FurnishingPlugin,
+            effects::EffectsPlugin,
+            ui::UiPlugin,
+            toolbar::ToolbarPlugin,
+            ending::EndingPlugin,
+            progress::ProgressPlugin,
+            inspect::InspectPlugin,
+            scenario::ScenarioPlugin,
+            save::SavePlugin,
+            overlay::OverlayPlugin,
+            menu::MenuPlugin,
+            audio::AudioPlugin,
+        ));
+    #[cfg(debug_assertions)]
+    app.add_plugins(devtools::DevToolsPlugin);
+    app.run();
+}
