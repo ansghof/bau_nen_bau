@@ -1,7 +1,7 @@
-# Baut die Fassungen zum Herunterladen: Windows, Linux, macOS und die Android-APK.
-# Nach jedem Push auf main liegen sie als Artefakte am Lauf (Actions → „Fassungen“ → Lauf → Artifacts);
+# Baut das Spiel zum Herunterladen: Windows, Linux, macOS und die Android-APK.
+# Nach jedem Push auf main liegen sie als Artefakte am Lauf (Actions → „Builds“ → Lauf → Artifacts);
 # bei einem Versions-Tag wie v0.2.0 kommen sie zusätzlich in ein GitHub-Release.
-name: Fassungen
+name: Builds
 
 on:
   push:
