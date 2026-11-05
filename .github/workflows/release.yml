@@ -1,12 +1,18 @@
 # Baut die Fassungen zum Herunterladen: Windows, Linux, macOS und die Android-APK.
-# Von Hand gestartet (Actions → „Fassungen“ → Run workflow) liegen sie danach als Artefakte am Lauf;
+# Nach jedem Push auf main liegen sie als Artefakte am Lauf (Actions → „Fassungen“ → Lauf → Artifacts);
 # bei einem Versions-Tag wie v0.2.0 kommen sie zusätzlich in ein GitHub-Release.
 name: Fassungen
 
 on:
   push:
+    branches: [main]
     tags: ["v*"]
   workflow_dispatch:
+
+# Ein neuer Push auf main löst den alten Lauf ab; Tags laufen immer zu Ende.
+concurrency:
+  group: fassungen-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref == 'refs/heads/main' }}
 
 permissions:
   contents: write
