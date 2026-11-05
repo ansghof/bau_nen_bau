@@ -1,4 +1,4 @@
-//! Bunny Skylines – Bau ’nen Bau! Das ganze Spiel; die Einstiegspunkte für Desktop und Browser
+//! Burrow Boroughs – Bau ’nen Bau! Das ganze Spiel; die Einstiegspunkte für Desktop und Browser
 //! (`main.rs`) und für Android (`mobile/`) rufen nur [`run`] auf.
 
 mod audio;
@@ -51,7 +51,7 @@ pub fn run() {
     let mut app = App::new();
     app.add_plugins(DefaultPlugins.set(WindowPlugin {
         primary_window: Some(Window {
-            title: "Bunny Skylines – Bau ’nen Bau!".into(),
+            title: "Burrow Boroughs – Bau ’nen Bau!".into(),
             resolution: (1280, 720).into(),
             focused: !test_run,
             visible: !hidden,

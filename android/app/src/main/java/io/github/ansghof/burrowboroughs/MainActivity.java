@@ -1,4 +1,4 @@
-package io.github.ansghof.bunnyskylines;
+package io.github.ansghof.burrowboroughs;
 
 import android.os.Bundle;
 import android.view.View;
@@ -9,7 +9,7 @@ import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.google.androidgamesdk.GameActivity;
 
-/** Startet das Spiel aus libbunny_skylines_mobile.so im Vollbild. */
+/** Startet das Spiel aus libburrow_boroughs_mobile.so im Vollbild. */
 public class MainActivity extends GameActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {

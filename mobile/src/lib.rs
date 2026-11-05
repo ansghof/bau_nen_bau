@@ -4,5 +4,5 @@ use bevy::prelude::bevy_main;
 
 #[bevy_main]
 fn main() {
-    bunny_skylines::run();
+    burrow_boroughs::run();
 }

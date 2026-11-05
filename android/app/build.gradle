@@ -1,4 +1,4 @@
-// Die Android-Hülle um das Spiel. Die eigentliche Arbeit macht libbunny_skylines_mobile.so,
+// Die Android-Hülle um das Spiel. Die eigentliche Arbeit macht libburrow_boroughs_mobile.so,
 // die cargo-ndk vorher nach src/main/jniLibs baut (siehe .github/workflows/android.yml).
 plugins {
     id "com.android.application"
@@ -11,11 +11,11 @@ def cargoVersion = file("../../Cargo.toml").readLines()
 def (major, minor, patch) = cargoVersion.tokenize(".").collect { it.toInteger() }
 
 android {
-    namespace "io.github.ansghof.bunnyskylines"
+    namespace "io.github.ansghof.burrowboroughs"
     compileSdk 35
 
     defaultConfig {
-        applicationId "io.github.ansghof.bunnyskylines"
+        applicationId "io.github.ansghof.burrowboroughs"
         minSdk 28
         targetSdk 35
         versionName cargoVersion

@@ -97,7 +97,14 @@ fn data_dir() -> Option<std::path::PathBuf> {
     } else {
         env("XDG_DATA_HOME").or_else(|| env("HOME").map(|home| home.join(".local/share")))
     };
-    base.map(|dir| dir.join("BunnySkylines"))
+    let base = base?;
+    let dir = base.join("BurrowBoroughs");
+    // Das Spiel hieß früher „Bunny Skylines“: alte Spielstände ziehen einmal mit um.
+    let old = base.join("BunnySkylines");
+    if !dir.exists() && old.is_dir() {
+        let _ = std::fs::rename(&old, &dir);
+    }
+    Some(dir)
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -124,15 +131,17 @@ fn storage() -> Result<web_sys::Storage, String> {
 
 #[cfg(target_arch = "wasm32")]
 fn read_data(file: &str) -> Result<String, String> {
-    storage()?
-        .get_item(&format!("bunny_skylines/{file}"))
-        .map_err(|e| format!("{e:?}"))?
+    let storage = storage()?;
+    let get = |prefix: &str| storage.get_item(&format!("{prefix}/{file}")).map_err(|e| format!("{e:?}"));
+    // Spielstände aus der Zeit, als das Spiel noch „Bunny Skylines“ hieß, gelten weiter.
+    get("burrow_boroughs")?
+        .or(get("bunny_skylines")?)
         .ok_or_else(|| format!("{file} fehlt"))
 }
 
 #[cfg(target_arch = "wasm32")]
 fn write_data(file: &str, text: &str) -> Result<(), String> {
-    storage()?.set_item(&format!("bunny_skylines/{file}"), text).map_err(|e| format!("{e:?}"))
+    storage()?.set_item(&format!("burrow_boroughs/{file}"), text).map_err(|e| format!("{e:?}"))
 }
 
 /// Bis zu welchem Kapitel die Kampagne frei ist; das erste ist es immer.

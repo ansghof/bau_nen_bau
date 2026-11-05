@@ -1,7 +1,7 @@
 # Die Android-Fassung: dieselbe Spiel-Bibliothek, verpackt als .so für die GameActivity.
 # Gebaut wird sie mit cargo-ndk, verpackt mit Gradle im Ordner android/.
 [package]
-name = "bunny_skylines_mobile"
+name = "burrow_boroughs_mobile"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.97"
@@ -11,5 +11,5 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
-bunny_skylines = { path = ".." }
+burrow_boroughs = { path = ".." }
 bevy = { version = "0.20", default-features = false, features = ["android-game-activity"] }

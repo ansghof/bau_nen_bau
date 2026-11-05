@@ -45,12 +45,12 @@ jobs:
       - name: Seite zusammenstellen
         run: |
           mkdir -p dist
-          wasm-bindgen --target web --no-typescript --out-dir dist --out-name bunny_skylines \
-            target/wasm32-unknown-unknown/web/bunny_skylines.wasm
+          wasm-bindgen --target web --no-typescript --out-dir dist --out-name burrow_boroughs \
+            target/wasm32-unknown-unknown/web/burrow_boroughs.wasm
           # Die Erweiterungen, die Rust für wasm32 von sich aus nutzt.
           wasm-opt -Os --enable-bulk-memory --enable-nontrapping-float-to-int --enable-sign-ext \
             --enable-mutable-globals --enable-multivalue --enable-reference-types \
-            dist/bunny_skylines_bg.wasm -o dist/bunny_skylines_bg.wasm
+            dist/burrow_boroughs_bg.wasm -o dist/burrow_boroughs_bg.wasm
           # Seite, Manifest, Service Worker und Symbole der Web-App.
           cp web/* dist/
           cp -r assets dist/

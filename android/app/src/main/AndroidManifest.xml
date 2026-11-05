@@ -4,13 +4,13 @@
     <uses-feature android:glEsVersion="0x00030000" android:required="true" />
 
     <application
-        android:label="Bunny Skylines"
+        android:label="Burrow Boroughs"
         android:icon="@mipmap/ic_launcher"
         android:allowBackup="true"
         android:hasCode="true"
         android:appCategory="game"
         android:isGame="true"
-        android:theme="@style/Theme.BunnySkylines">
+        android:theme="@style/Theme.BurrowBoroughs">
 
         <activity
             android:name=".MainActivity"
@@ -18,7 +18,7 @@
             android:screenOrientation="sensorLandscape"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|keyboard|density|uiMode"
             android:launchMode="singleTask">
-            <meta-data android:name="android.app.lib_name" android:value="bunny_skylines_mobile" />
+            <meta-data android:name="android.app.lib_name" android:value="burrow_boroughs_mobile" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
