@@ -27,7 +27,7 @@ Die ganze Datenschutzerklärung steht unter";
 const TITLE_IMAGE: &str = "ui/titelbild.png";
 /// So lange steht das Titelbild allein da, bevor das Menü erscheint.
 const SPLASH_SECONDS: f32 = 1.5;
-/// Füllt links und rechts neben dem quadratischen Bild, passend zum Grün der Wiese.
+/// Füllt die Ränder neben dem Titelbild, wenn das Fenster ein anderes Seitenverhältnis hat.
 const SIDE_COLOR: Color = Color::srgb(0.16, 0.24, 0.12);
 const SHADE: Color = Color::srgba(0.06, 0.05, 0.03, 0.72);
 const BUTTON: Color = Color::srgb(0.45, 0.33, 0.22);
@@ -42,12 +42,16 @@ impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_title)
             .init_resource::<OpenMenu>()
-            .add_systems(Update, (reveal_menu, hover_buttons, pause_menu_key));
+            .add_systems(Update, (reveal_menu, hover_buttons, pause_menu_key, fit_title_image));
     }
 }
 
 #[derive(Component)]
 pub struct TitleScreen;
+
+/// Das Titelbild selbst; [`fit_title_image`] macht es so groß wie möglich, ohne es zu verzerren.
+#[derive(Component)]
+struct TitleImage;
 
 /// Der Menüknopf in der Werkzeugleiste bittet hierüber um das Pausenmenü.
 #[derive(Resource, Default)]
@@ -110,12 +114,10 @@ fn spawn_title(mut commands: Commands, asset_server: Res<AssetServer>, mut time:
 
     if title_image_exists() {
         commands.spawn((
+            TitleImage,
             ImageNode::new(asset_server.load(TITLE_IMAGE)),
-            Node {
-                height: Val::Percent(100.0),
-                aspect_ratio: Some(1.0),
-                ..default()
-            },
+            // Bis das Bild geladen ist, kennt niemand sein Seitenverhältnis: so lange unsichtbar klein.
+            Node { width: Val::Px(0.0), height: Val::Px(0.0), ..default() },
             ChildOf(screen),
         ));
     } else {
@@ -199,6 +201,34 @@ fn on_primary<M: 'static>(
     move |click: On<PointerClick>, mut commands: Commands| {
         if click.button == PointerButton::Primary {
             commands.run_system_cached(action);
+        }
+    }
+}
+
+/// Passt das Titelbild ins Fenster wie „contain“: so groß wie möglich, im eigenen Seitenverhältnis,
+/// mittig, mit Rändern in [`SIDE_COLOR`] dort, wo das Fenster breiter oder höher ist als das Bild.
+fn fit_title_image(
+    images: Res<Assets<Image>>,
+    screens: Query<&ComputedNode, With<TitleScreen>>,
+    mut titles: Query<(&ImageNode, &mut Node), With<TitleImage>>,
+) {
+    let Some(screen) = screens.iter().next() else {
+        return;
+    };
+    let room = screen.size() * screen.inverse_scale_factor();
+    for (image, mut node) in &mut titles {
+        let Some(picture) = images.get(&image.image) else {
+            continue;
+        };
+        let picture = picture.size_f32();
+        if picture.x <= 0.0 || picture.y <= 0.0 || room.x <= 0.0 || room.y <= 0.0 {
+            continue;
+        }
+        let scale = (room.x / picture.x).min(room.y / picture.y);
+        let (width, height) = (Val::Px(picture.x * scale), Val::Px(picture.y * scale));
+        if node.width != width || node.height != height {
+            node.width = width;
+            node.height = height;
         }
     }
 }
