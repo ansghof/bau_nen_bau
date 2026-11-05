@@ -34,7 +34,7 @@ jobs:
             exe: bunny_skylines
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -47,7 +47,8 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev
 
       - name: Bauen
-        run: cargo build --release
+        shell: bash
+        run: bash .github/bau.sh cargo build --release
 
       # Das Spiel sucht seine Bilder und Töne im Ordner assets neben dem Programm.
       - name: Zusammenpacken
@@ -65,7 +66,7 @@ jobs:
   android:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -79,7 +80,7 @@ jobs:
         with:
           tool: cargo-ndk
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
@@ -90,9 +91,10 @@ jobs:
 
       # Fast alle Android-Geräte der letzten Jahre sind arm64.
       - name: Spiel für Android bauen
-        env:
-          ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_LATEST_HOME }}
-        run: cargo ndk -t arm64-v8a -o android/app/src/main/jniLibs build --release -p bunny_skylines_mobile
+        # Das neueste NDK des Runners; die Variable steht nur in der Shell, nicht im env-Kontext.
+        run: |
+          export ANDROID_NDK_HOME="$ANDROID_NDK_LATEST_HOME"
+          bash .github/bau.sh cargo ndk -t arm64-v8a -o android/app/src/main/jniLibs build --release -p bunny_skylines_mobile
 
       # Mit Schlüssel aus den Secrets lässt sich jede neue APK über die alte installieren;
       # ohne wird sie mit dem Debug-Schlüssel des Laufs signiert.
@@ -113,7 +115,7 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          gradle -p android assembleRelease
+          bash .github/bau.sh gradle -p android assembleRelease
           mkdir -p dist
           cp android/app/build/outputs/apk/release/app-release.apk dist/BunnySkylines.apk
 
