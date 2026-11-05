@@ -51,7 +51,8 @@ jobs:
           wasm-opt -Os --enable-bulk-memory --enable-nontrapping-float-to-int --enable-sign-ext \
             --enable-mutable-globals --enable-multivalue --enable-reference-types \
             dist/bunny_skylines_bg.wasm -o dist/bunny_skylines_bg.wasm
-          cp web/index.html dist/
+          # Seite, Manifest, Service Worker und Symbole der Web-App.
+          cp web/* dist/
           cp -r assets dist/
 
       - uses: actions/upload-pages-artifact@v3
