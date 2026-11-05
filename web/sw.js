@@ -1,10 +1,10 @@
 // Damit die installierte Web-App auch ohne Netz startet: Was einmal geladen wurde, liegt im Cache.
 // Seite, Programm und WebAssembly kommen bevorzugt frisch aus dem Netz, damit Updates sofort ankommen;
 // Bilder und Töne kommen aus dem Cache und werden im Hintergrund aufgefrischt.
-const CACHE = "burrow-boroughs";
+const CACHE = "bau-nen-bau";
 
 self.addEventListener("install", () => self.skipWaiting());
-// Caches unter anderem Namen (etwa aus der Zeit als „Bunny Skylines“) werden aufgeräumt.
+// Caches unter anderem Namen (etwa von früheren Spielnamen) werden aufgeräumt.
 self.addEventListener("activate", (event) =>
   event.waitUntil(
     caches

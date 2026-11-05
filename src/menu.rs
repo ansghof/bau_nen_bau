@@ -112,7 +112,7 @@ fn spawn_title(mut commands: Commands, asset_server: Res<AssetServer>, mut time:
         ));
     } else {
         commands.spawn((
-            Text::new("Burrow Boroughs\nBau ’nen Bau!"),
+            Text::new("Bau ’nen Bau!"),
             TextLayout::justify(Justify::Center),
             TextColor(TEXT),
             font(56.0),

@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    burrow_boroughs::run();
+    bau_nen_bau::run();
 }

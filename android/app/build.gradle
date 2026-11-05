@@ -1,4 +1,4 @@
-// Die Android-Hülle um das Spiel. Die eigentliche Arbeit macht libburrow_boroughs_mobile.so,
+// Die Android-Hülle um das Spiel. Die eigentliche Arbeit macht libbau_nen_bau_mobile.so,
 // die cargo-ndk vorher nach src/main/jniLibs baut (siehe .github/workflows/android.yml).
 plugins {
     id "com.android.application"
@@ -11,11 +11,11 @@ def cargoVersion = file("../../Cargo.toml").readLines()
 def (major, minor, patch) = cargoVersion.tokenize(".").collect { it.toInteger() }
 
 android {
-    namespace "io.github.ansghof.burrowboroughs"
+    namespace "io.github.ansghof.baunenbau"
     compileSdk 35
 
     defaultConfig {
-        applicationId "io.github.ansghof.burrowboroughs"
+        applicationId "io.github.ansghof.baunenbau"
         minSdk 28
         targetSdk 35
         versionName cargoVersion

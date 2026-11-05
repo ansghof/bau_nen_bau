@@ -4,5 +4,5 @@ use bevy::prelude::bevy_main;
 
 #[bevy_main]
 fn main() {
-    burrow_boroughs::run();
+    bau_nen_bau::run();
 }
