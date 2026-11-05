@@ -2,7 +2,7 @@
 //! Die Ordnerstruktur bleibt erhalten: `art_src/figuren/kaninchen/kopf.svg`
 //! wird zu `assets/figuren/kaninchen/kopf.png`.
 //!
-//! Dazu kommen die App-Symbole für Android und die Web-App, ein Ausschnitt aus dem Titelbild.
+//! Dazu kommen die App-Symbole für Android und die Web-App, aus `assets/ui/icon.png`.
 //!
 //! Aufruf aus dem Projektordner: `cargo run -p art_export`
 
@@ -71,33 +71,42 @@ fn export(svg: &Path, png: &Path) -> Result<(), String> {
     pixmap.save_png(png).map_err(|e| e.to_string())
 }
 
-/// Der Ausschnitt aus dem Titelbild (1254 × 1254), der das App-Symbol wird: der Kopf des grauen Kaninchens,
-/// eng geschnitten, damit er auch als kleines Favicon erkennbar bleibt. Für beide Köpfe nebeneinander
-/// wäre der Ausschnitt so breit, dass jeder Kopf winzig würde.
-const ICON_CROP: (f32, f32, f32) = (628.0, 478.0, 372.0);
+/// Die Vorlage für alle App-Symbole: die beiden Kaninchenköpfe, freigestellt (1254 × 1254, durchsichtig).
+const ICON_SOURCE: &str = "icon.png";
+const ICON_SOURCE_SIZE: f32 = 1254.0;
 
-/// Wohin welches Symbol in welcher Größe kommt; `true` heißt mit runden Ecken.
-const ICONS: &[(&str, u32, bool)] = &[
-    ("android/app/src/main/res/mipmap-mdpi/ic_launcher.png", 48, true),
-    ("android/app/src/main/res/mipmap-hdpi/ic_launcher.png", 72, true),
-    ("android/app/src/main/res/mipmap-xhdpi/ic_launcher.png", 96, true),
-    ("android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png", 144, true),
-    ("android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png", 192, true),
-    ("web/symbol-192.png", 192, true),
-    ("web/symbol-512.png", 512, true),
-    // Für Geräte, die das Symbol selbst in Kreis oder Tropfen schneiden: randlos.
-    ("web/symbol-maskable-512.png", 512, false),
-    ("web/apple-touch-icon.png", 180, false),
+/// Wohin welches Symbol in welcher Größe kommt. Mit `Some(anteil)` liegt es auf sandfarbenem Grund und
+/// füllt nur diesen Anteil der Fläche: Android und iOS schneiden solche Symbole selbst zu Kreis oder
+/// Tropfen, und iOS füllt Durchsichtiges sonst schwarz.
+const ICONS: &[(&str, u32, Option<f32>)] = &[
+    ("android/app/src/main/res/mipmap-mdpi/ic_launcher.png", 48, None),
+    ("android/app/src/main/res/mipmap-hdpi/ic_launcher.png", 72, None),
+    ("android/app/src/main/res/mipmap-xhdpi/ic_launcher.png", 96, None),
+    ("android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png", 144, None),
+    ("android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png", 192, None),
+    ("web/symbol-192.png", 192, None),
+    ("web/symbol-512.png", 512, None),
+    // Im sicheren Bereich, dem Kreis aus 80 % der Breite, müssen die Köpfe ganz liegen.
+    ("web/symbol-maskable-512.png", 512, Some(0.72)),
+    ("web/apple-touch-icon.png", 180, Some(0.88)),
 ];
 
+/// Die Farbe hinter dem Spiel und auf dem Ladebildschirm.
+const SAND: &str = "#faf2db";
+
 fn app_icons() -> Result<(), String> {
-    let (x, y, size) = ICON_CROP;
-    for &(path, pixels, rounded) in ICONS {
-        let corner = if rounded { size * 0.18 } else { 0.0 };
+    for &(path, pixels, background) in ICONS {
+        let fill = background.unwrap_or(1.0);
+        let size = ICON_SOURCE_SIZE * fill;
+        let offset = (ICON_SOURCE_SIZE - size) / 2.0;
+        let ground = match background {
+            Some(_) => format!(r#"<rect width="{ICON_SOURCE_SIZE}" height="{ICON_SOURCE_SIZE}" fill="{SAND}"/>"#),
+            None => String::new(),
+        };
         let svg = format!(
-            r#"<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="{pixels}" height="{pixels}" viewBox="{x} {y} {size} {size}">
-  <clipPath id="ecken"><rect x="{x}" y="{y}" width="{size}" height="{size}" rx="{corner}"/></clipPath>
-  <image clip-path="url(#ecken)" x="0" y="0" width="1254" height="1254" xlink:href="titelbild.png"/>
+            r#"<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="{pixels}" height="{pixels}" viewBox="0 0 {ICON_SOURCE_SIZE} {ICON_SOURCE_SIZE}">
+  {ground}
+  <image x="{offset}" y="{offset}" width="{size}" height="{size}" xlink:href="{ICON_SOURCE}"/>
 </svg>"#
         );
         let options = usvg::Options { resources_dir: Some(PathBuf::from("assets/ui")), ..usvg::Options::default() };
@@ -109,7 +118,7 @@ fn app_icons() -> Result<(), String> {
             fs::create_dir_all(parent).map_err(|e| e.to_string())?;
         }
         pixmap.save_png(png).map_err(|e| e.to_string())?;
-        println!("Titelbild -> {path}");
+        println!("{ICON_SOURCE} -> {path}");
     }
     Ok(())
 }
