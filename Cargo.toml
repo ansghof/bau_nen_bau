@@ -6,15 +6,16 @@ rust-version = "1.97"
 publish = false
 
 [workspace]
-members = ["tools/art_export", "tools/sound_gen", "tools/texture_gen"]
+members = ["mobile", "tools/art_export", "tools/sound_gen", "tools/texture_gen"]
 
 [dependencies]
 bevy = { version = "0.20", features = ["wav"] }
 ron = "0.12"
 serde = { version = "1", features = ["derive"] }
 
-# system_font_discovery: Die eingebaute Schrift hat keine Umlaute, also Systemschriften nutzen.
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# Nur am Rechner: Bilder beim Ändern neu laden, und Systemschriften finden.
+# Browser und Handy nehmen die mitgelieferte Schrift aus assets/schrift.
+[target.'cfg(not(any(target_arch = "wasm32", target_os = "android")))'.dependencies]
 bevy = { version = "0.20", features = ["file_watcher", "system_font_discovery"] }
 
 # Im Browser: Spielstände im localStorage, Zufall aus der Uhr des Browsers.

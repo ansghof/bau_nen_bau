@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Vollbild ohne Titelleiste; der Hintergrund hat die Farbe des Spiels, solange es lädt. -->
+    <style name="Theme.BunnySkylines" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowBackground">@color/sand</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+    </style>
+    <color name="sand">#FAF2DB</color>
+</resources>

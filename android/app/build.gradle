@@ -1,0 +1,76 @@
+// Die Android-Hülle um das Spiel. Die eigentliche Arbeit macht libbunny_skylines_mobile.so,
+// die cargo-ndk vorher nach src/main/jniLibs baut (siehe .github/workflows/android.yml).
+plugins {
+    id "com.android.application"
+}
+
+// Versionsnummer aus der Cargo.toml des Spiels, damit alle Fassungen dieselbe tragen.
+def cargoVersion = file("../../Cargo.toml").readLines()
+        .find { it.startsWith("version") }
+        .replaceAll(/.*"(.*)".*/, '$1')
+def (major, minor, patch) = cargoVersion.tokenize(".").collect { it.toInteger() }
+
+android {
+    namespace "io.github.ansghof.bunnyskylines"
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "io.github.ansghof.bunnyskylines"
+        minSdk 28
+        targetSdk 35
+        versionName cargoVersion
+        // Fortlaufend aus der Versionsnummer: 1.2.3 wird zu 10203, der Build-Zähler kommt dazu.
+        versionCode major * 10000 + minor * 100 + patch + (System.getenv("GITHUB_RUN_NUMBER") ?: "0").toInteger() * 1000000
+    }
+
+    // Ein fester Schlüssel aus den Umgebungsvariablen, sonst der Debug-Schlüssel.
+    // Nur mit demselben Schlüssel lässt sich eine installierte Fassung später aktualisieren.
+    signingConfigs {
+        release {
+            def keystore = System.getenv("ANDROID_KEYSTORE")
+            if (keystore) {
+                storeFile file(keystore)
+                storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("ANDROID_KEY_ALIAS")
+                keyPassword System.getenv("ANDROID_KEY_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig System.getenv("ANDROID_KEYSTORE") ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+
+    sourceSets {
+        main {
+            // Dieselben Bilder, Töne und Schriften wie am Rechner und im Browser.
+            assets.srcDirs = ["../../assets"]
+        }
+    }
+
+    // Die Töne und Bilder sind schon gepackt; noch einmal komprimieren bringt kaum etwas.
+    androidResources {
+        noCompress += ["wav", "png", "ktx2"]
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging false
+        }
+    }
+}
+
+dependencies {
+    implementation "androidx.appcompat:appcompat:1.7.0"
+    implementation "androidx.core:core:1.13.1"
+    // Muss zur Version passen, die android-activity erwartet (siehe dessen README).
+    implementation "androidx.games:games-activity:4.4.0"
+}
