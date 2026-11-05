@@ -69,6 +69,8 @@ android {
 }
 
 dependencies {
+    // Hebt die alten kotlin-stdlib-jdk7/-jdk8 auf dieselbe Version wie kotlin-stdlib, sonst gibt es Klassen doppelt.
+    implementation platform("org.jetbrains.kotlin:kotlin-bom:1.8.22")
     implementation "androidx.appcompat:appcompat:1.7.0"
     implementation "androidx.core:core:1.13.1"
     // Muss zur Version passen, die android-activity erwartet (siehe dessen README).
