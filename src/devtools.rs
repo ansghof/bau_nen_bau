@@ -45,6 +45,7 @@
 //! - `landkauf`: das Werkzeug „Land kaufen“ mit 50 Erde wählen
 //! - `kapitel=N`: gleich mit Kapitel N beginnen
 //! - `kapitelwahl`: auf dem Titelbild die Kapitelwahl öffnen
+//! - `datenschutz`: auf dem Titelbild den Datenschutz öffnen
 //! - `titel`: auf dem Titelbild bleiben
 //! - `intro`: die Einleitung des Kapitels offen lassen (sonst wird sie gleich geschlossen)
 //! - `ziel`: Ziele des Kapitels sofort erfüllen, damit der Siegbildschirm erscheint
@@ -82,7 +83,7 @@ use crate::marten::MartenSpawner;
 use crate::predator::FoxSpawner;
 use crate::drought::Drought;
 use crate::flood::Flood;
-use crate::menu::{OpenMenu, TitleScreen, close_title, new_game};
+use crate::menu::{OpenMenu, TitleScreen, close_title, new_game, show_privacy};
 use crate::save::{load_game, save_game};
 use crate::scenario::{Chapter, Dangers, Scenario, Stage, Target, Terrain, play_on, start_chapter, start_playing};
 use crate::ground::{floor_y, to_world3};
@@ -663,7 +664,13 @@ fn skip_intro(
         commands.run_system_cached(new_game);
         return;
     }
-    if !done.0 && !script.has("titel") && !script.has("kapitelwahl") {
+    if script.has("datenschutz") && !done.0 && time.elapsed_secs() > 2.0 {
+        done.0 = true;
+        commands.run_system_cached(show_privacy);
+        return;
+    }
+    let on_title = ["titel", "kapitelwahl", "datenschutz"].iter().any(|name| script.has(name));
+    if !done.0 && !on_title {
         done.0 = true;
         commands.run_system_cached(close_title);
         let number = script.value("kapitel").map_or(1, |n| n as u32);

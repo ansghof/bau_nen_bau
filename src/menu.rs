@@ -15,6 +15,14 @@ use crate::save::{chapters_unlocked, load_game, save_exists, save_game};
 use crate::scenario::{CHAPTERS, FREE_PLAY, start_chapter, start_playing};
 use crate::toolbar::Toolbar;
 
+/// Hier steht die vollständige Datenschutzerklärung; Google Play verlangt sie auch in der App.
+const PRIVACY_URL: &str = "https://ansghof.github.io/bau_nen_bau/datenschutz.html";
+/// Die Kurzfassung, die im Titelmenü unter „Datenschutz“ steht.
+const PRIVACY_TEXT: &str = "Bau ’nen Bau! sammelt keine persönlichen Daten.\n\
+Es gibt keine Anmeldung, keine Werbung und keine Statistik, und das Spiel schickt nichts ins Internet.\n\
+Spielstände liegen nur auf diesem Gerät (und in seiner Sicherung, falls eingeschaltet).\n\n\
+Die ganze Datenschutzerklärung steht unter";
+
 /// Bild für den Titel, relativ zum Ordner `assets`.
 const TITLE_IMAGE: &str = "ui/titelbild.png";
 /// So lange steht das Titelbild allein da, bevor das Menü erscheint.
@@ -149,6 +157,7 @@ fn spawn_title(mut commands: Commands, asset_server: Res<AssetServer>, mut time:
     }
     menu_button(&mut commands, menu, "Kampagne").observe(on_primary(new_game));
     menu_button(&mut commands, menu, "Freies Spiel").observe(on_primary(free_game));
+    menu_button(&mut commands, menu, "Datenschutz").observe(on_primary(show_privacy));
     if CAN_QUIT {
         menu_button(&mut commands, menu, "Beenden").observe(on_primary(quit));
     }
@@ -225,9 +234,9 @@ pub fn close_title(world: &mut World) {
     }
 }
 
-/// Die Kapitelwahl, die beim Titelbild das Hauptmenü ersetzt.
+/// Ein Fenster, das beim Titelbild das Hauptmenü ersetzt, etwa die Kapitelwahl.
 #[derive(Component)]
-struct ChapterMenu;
+struct SubMenu;
 
 /// Kampagne vom Titelbild: Kapitel wählen. Gesperrte Kapitel sagen, was vorher zu schaffen ist.
 pub fn new_game(
@@ -243,7 +252,7 @@ pub fn new_game(
     }
     let panel = commands
         .spawn((
-            ChapterMenu,
+            SubMenu,
             Node {
                 position_type: PositionType::Absolute,
                 bottom: Val::Percent(14.0),
@@ -287,13 +296,49 @@ fn free_game(world: &mut World) {
     world.run_system_cached_with(start_chapter, FREE_PLAY.number).ok();
 }
 
-/// Von der Kapitelwahl zurück zum Hauptmenü.
-fn back_to_title(
+/// Die Datenschutzerklärung in Kurzform, mit der Adresse der vollständigen Fassung.
+pub fn show_privacy(
     mut commands: Commands,
-    chapter_menus: Query<Entity, With<ChapterMenu>>,
+    screens: Query<Entity, With<TitleScreen>>,
     mut menus: Query<&mut Node, With<TitleMenu>>,
 ) {
-    for menu in &chapter_menus {
+    let Some(screen) = screens.iter().next() else {
+        return;
+    };
+    for mut node in &mut menus {
+        node.display = Display::None;
+    }
+    let panel = commands
+        .spawn((
+            SubMenu,
+            Node {
+                position_type: PositionType::Absolute,
+                bottom: Val::Percent(14.0),
+                max_width: Val::Px(720.0),
+                flex_direction: FlexDirection::Column,
+                align_items: AlignItems::Center,
+                row_gap: Val::Px(12.0),
+                padding: UiRect::axes(Val::Px(36.0), Val::Px(22.0)),
+                border_radius: BorderRadius::all(Val::Px(14.0)),
+                ..default()
+            },
+            BackgroundColor(SHADE),
+            ChildOf(screen),
+        ))
+        .id();
+    commands.spawn((Text::new("Datenschutz"), TextColor(TEXT), font(26.0), ChildOf(panel)));
+    commands.spawn((Text::new(PRIVACY_TEXT), TextLayout::justify(Justify::Center), TextColor(TEXT), font(18.0), ChildOf(panel)));
+    commands.spawn((Text::new(PRIVACY_URL), TextColor(TEXT), font(16.0), ChildOf(panel)));
+    menu_button(&mut commands, panel, "Zurück").observe(on_primary(back_to_title));
+}
+
+/// Von der Kapitelwahl oder dem Datenschutz zurück zum Hauptmenü.
+fn back_to_title(
+    mut commands: Commands,
+    sub_menus: Query<Entity, With<SubMenu>>,
+    mut menus: Query<&mut Node, With<TitleMenu>>,
+) {
+    for menu in &sub_menus {
         commands.entity(menu).despawn();
     }
     for mut node in &mut menus {
