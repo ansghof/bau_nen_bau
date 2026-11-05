@@ -71,8 +71,10 @@ fn export(svg: &Path, png: &Path) -> Result<(), String> {
     pixmap.save_png(png).map_err(|e| e.to_string())
 }
 
-/// Der Ausschnitt aus dem Titelbild (1254 × 1254), der das App-Symbol wird: der Kopf des braunen Kaninchens.
-const ICON_CROP: (f32, f32, f32) = (100.0, 448.0, 415.0);
+/// Der Ausschnitt aus dem Titelbild (1254 × 1254), der das App-Symbol wird: der Kopf des grauen Kaninchens,
+/// eng geschnitten, damit er auch als kleines Favicon erkennbar bleibt. Für beide Köpfe nebeneinander
+/// wäre der Ausschnitt so breit, dass jeder Kopf winzig würde.
+const ICON_CROP: (f32, f32, f32) = (628.0, 478.0, 372.0);
 
 /// Wohin welches Symbol in welcher Größe kommt; `true` heißt mit runden Ecken.
 const ICONS: &[(&str, u32, bool)] = &[
