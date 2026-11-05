@@ -12,12 +12,12 @@ def (major, minor, patch) = cargoVersion.tokenize(".").collect { it.toInteger() 
 
 android {
     namespace "io.github.ansghof.baunenbau"
-    compileSdk 35
+    compileSdk 36
 
     defaultConfig {
         applicationId "io.github.ansghof.baunenbau"
         minSdk 28
-        targetSdk 35
+        targetSdk 36
         versionName cargoVersion
         // Fortlaufend aus der Versionsnummer: 1.2.3 wird zu 10203, der Build-Zähler kommt dazu.
         versionCode major * 10000 + minor * 100 + patch + (System.getenv("GITHUB_RUN_NUMBER") ?: "0").toInteger() * 1000000

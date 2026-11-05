@@ -10,6 +10,7 @@
         android:hasCode="true"
         android:appCategory="game"
         android:isGame="true"
+        android:enableOnBackInvokedCallback="false"
         android:theme="@style/Theme.BauNenBau">
 
         <activity
