@@ -7,7 +7,7 @@ import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 
-import com.google.androidgames.gameactivity.GameActivity;
+import com.google.androidgamesdk.GameActivity;
 
 /** Startet das Spiel aus libbunny_skylines_mobile.so im Vollbild. */
 public class MainActivity extends GameActivity {
