@@ -381,12 +381,35 @@ fn continue_game(world: &mut World) {
     world.run_system_cached(load_game).ok();
 }
 
-/// Im Browser schließt man den Tab, auf dem Handy wischt man die App weg; ein Beenden-Knopf
-/// ließe dort nur ein stehendes Bild zurück.
-const CAN_QUIT: bool = !cfg!(any(target_arch = "wasm32", target_os = "android"));
+/// Im Browser schließt man den Tab; ein Beenden-Knopf ließe dort nur ein stehendes Bild zurück.
+const CAN_QUIT: bool = !cfg!(target_arch = "wasm32");
 
 fn quit(mut exit: MessageWriter<AppExit>) {
+    #[cfg(target_os = "android")]
+    close_android_app();
     exit.write(AppExit::Success);
+}
+
+/// Auf Android reicht `AppExit` nicht: Die Activity bliebe als stehendes Bild offen, und ein
+/// neuer Start im selben Prozess fände Bevy schon belegt. Deshalb schließt die Activity samt
+/// Eintrag in der App-Übersicht, und danach endet der ganze Prozess.
+#[cfg(target_os = "android")]
+fn close_android_app() {
+    use jni::{JavaVM, objects::JObject};
+    let Some(app) = bevy::android::ANDROID_APP.get() else {
+        return;
+    };
+    // Die Activity gehört android-activity; JObject gibt die Referenz beim Aufräumen nicht frei.
+    let Ok(vm) = (unsafe { JavaVM::from_raw(app.vm_as_ptr().cast()) }) else {
+        return;
+    };
+    let Ok(mut env) = vm.attach_current_thread() else {
+        return;
+    };
+    let activity = unsafe { JObject::from_raw(app.activity_as_ptr().cast()) };
+    if env.call_method(&activity, "finishAndRemoveTask", "()V", &[]).is_ok() {
+        std::process::exit(0);
+    }
 }
 
 /// F10 öffnet im Spiel das Pausenmenü, solange kein anderes Fenster offen ist; auf dem Handy

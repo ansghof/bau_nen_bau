@@ -23,6 +23,10 @@ bevy = { version = "0.20", features = ["file_watcher", "system_font_discovery"] 
 js-sys = "0.3"
 web-sys = { version = "0.3", features = ["Window", "Storage"] }
 
+# Auf Android: Für „Beenden“ die Activity über Java schließen.
+[target.'cfg(target_os = "android")'.dependencies]
+jni = "0.21"
+
 # Bevy-Systeme haben naturgemäß viele Parameter und lange Query-Typen.
 [lints.clippy]
 too_many_arguments = "allow"

@@ -446,6 +446,7 @@ name = "bau_nen_bau"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "jni 0.21.1",
  "js-sys",
  "ron",
  "serde",
