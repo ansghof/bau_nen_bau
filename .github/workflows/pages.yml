@@ -1,5 +1,5 @@
-# Baut die Webfassung (WASM) und stellt sie auf GitHub Pages.
-name: Webfassung
+# Baut die Web-Version (WASM) und stellt sie auf GitHub Pages.
+name: Web
 
 on:
   push:
