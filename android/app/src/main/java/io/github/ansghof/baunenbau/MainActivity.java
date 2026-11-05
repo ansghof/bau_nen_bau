@@ -1,4 +1,4 @@
-package de.axks.bau_nen_bau;
+package io.github.ansghof.baunenbau;
 
 import android.os.Bundle;
 import android.view.View;

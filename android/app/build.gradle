@@ -11,11 +11,11 @@ def cargoVersion = file("../../Cargo.toml").readLines()
 def (major, minor, patch) = cargoVersion.tokenize(".").collect { it.toInteger() }
 
 android {
-    namespace "de.axks.bau_nen_bau"
+    namespace "io.github.ansghof.baunenbau"
     compileSdk 35
 
     defaultConfig {
-        applicationId "de.axks.bau_nen_bau"
+        applicationId "io.github.ansghof.baunenbau"
         minSdk 28
         targetSdk 35
         versionName cargoVersion
