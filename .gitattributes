@@ -1,0 +1,2 @@
+# Shell-Skripte laufen auch auf dem Windows-Runner unter bash; dort stören CRLF-Zeilenenden.
+*.sh text eol=lf
